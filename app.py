@@ -12,5 +12,6 @@ days = [i for i in range(1, 33)]
 #         if year == 1902 and day > 31:
 #             break
 
-game = GameData()
-print(game.get_statcast(202))
+game = GameData(1903, 32, 'TeamNB', 'TeamA1')
+print(game.get_statcast(18))
+game.ball_pos.plot_play(18, False)
