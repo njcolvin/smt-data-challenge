@@ -13,4 +13,4 @@ days = [i for i in range(1, 33)]
 #             break
 
 game = GameData()
-print(game.get_home_roster())
+print(game.get_statcast(202))
