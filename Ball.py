@@ -30,10 +30,6 @@ class BallPosition:
             milb = baseball.MiLBField()
             fig, ax = plt.subplots(1, 1)
             milb.draw(ax=ax)
-            milb.scatter(
-                x,
-                y,
-                color = "#fec52e"
-            )
+            milb.scatter(x, y, color = "#fec52e")
         
         plt.show()
