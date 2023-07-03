@@ -14,5 +14,5 @@ days = [i for i in range(1, 33)]
 
 game = GameData(1903, 31, 'TeamNB', 'TeamA1')
 print(game.get_statcast(9))
+game.ball_pos.__generate_baseball_field2D__(9)
 game.ball_pos.__generate_baseball_field3D__(9)
-game.ball_pos.plot_play(9, True)
