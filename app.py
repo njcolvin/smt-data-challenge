@@ -12,6 +12,7 @@ days = [i for i in range(1, 33)]
 #         if year == 1902 and day > 31:
 #             break
 
-game = GameData(1903, 32, 'TeamNB', 'TeamA1')
-print(game.get_statcast(18))
-game.ball_pos.plot_play(18, False)
+game = GameData(1903, 31, 'TeamNB', 'TeamA1')
+print(game.get_statcast(9))
+game.ball_pos.__generate_baseball_field3D__(9)
+game.ball_pos.plot_play(9, True)
