@@ -36,14 +36,17 @@ class GameData():
         team_info = genfromtxt('./data/team_info.csv', skip_header=1, delimiter=',', dtype=None, encoding=None)
         return [x[1] for x in team_info if x[2] == self.year and x[0].strip('"').strip("'") == self.home_team]
     
-    def get_statcast(self, play_id:int) -> Statcast:
-        # get play_per_game and info
+    def id_to_ppg(self, play_id:int) -> int:
         events_play_id = self.game_events.X[self.game_events.X[:, 0] == play_id]
         play_per_game = events_play_id[0, 2]
         if play_per_game == play_id + 1: # some play occurred not tracked by play_id so decrease play_per_game by 1 to match
             play_per_game -= 1
+        return play_per_game
+    
+    def play_game_info(self, play_id:int) -> np.ndarray:
+        play_per_game = self.id_to_ppg(play_id)
         info_play_per_game = self.game_info.X[self.game_info.X[:, 3] == play_per_game]
-        
+
         # if play_per_game not found increment until a match is found
         while len(info_play_per_game) == 0 and play_per_game < self.game_events.X[len(self.game_events.X) - 1, 2]:
             print('warning: play_id ' + str(play_id) + ' did not find a match for play_per_game ' + str(play_per_game) +
@@ -54,12 +57,22 @@ class GameData():
         if len(info_play_per_game) == 0: # end of game or error
             return None
         
+        return info_play_per_game
+
+    def get_statcast(self, play_id:int) -> Statcast:
+        # get play_per_game and info
+        play_per_game = self.id_to_ppg(play_id)
+        info_play_per_game = self.play_game_info(play_id)
+        
+        # get at bats
         at_bat = info_play_per_game[0, 2]
-        if at_bat == -1: # compute at bats
-            at_bat = self.game_info.get_at_bats(play_per_game) # needs more testing
+        print('at bat %d' % at_bat)
+        if at_bat == -1:
+            at_bat = self.game_info.at_bats(play_per_game) # TODO: at bats testing
 
         inning = info_play_per_game[0, 4]
         inning_is_top = info_play_per_game[0, 5] > 0
+
         pitcher_id = info_play_per_game[0, 6]
         catcher_id = info_play_per_game[0, 7]
         firstbase_id = info_play_per_game[0, 8]
@@ -73,10 +86,9 @@ class GameData():
         firstbase_runner_id = info_play_per_game[0, 16]
         secondbase_runner_id = info_play_per_game[0, 17]
         thirdbase_runner_id = info_play_per_game[0, 18]
-        outs = self.get_outs(play_per_game, inning, inning_is_top) # needs more testing
-        print('outs: ' + str(outs))
-        pitch_count = self.game_info.get_pitch_count(play_per_game) # seems to work ok
-        print('pitch count: ' + str(pitch_count))
+
+        outs = self.get_outs(play_per_game, inning, inning_is_top) # TODO: outs testing
+        
         return info_play_per_game
     
     def get_outs(self, play_per_game:int, inning:int, inning_is_top:bool) -> int:
@@ -99,6 +111,9 @@ class GameData():
                 prev_batter = current_batter
             i += 1
         return outs
+    
+    def get_hits(self):
+        return self.game_events.X[self.game_events.X[:, 5] == 4]
 
 class GameEvents:
 
@@ -141,11 +156,12 @@ class GameInfo:
         self.X = self.X.view((int, len(self.X.dtype.names)))
 
     
-    def get_at_bats(self, play_per_game:int) -> int:
+    def at_bats(self, play_per_game:int) -> int:
         game_history = self.X[self.X[:, 3] <= play_per_game]
         batters = game_history[:, 15]
         return np.sum(batters[1:] != batters[:-1]) + 1 # number of times batter changes + 1 for initial batter
     
+    # TODO: finish pitch count
     def get_pitch_count(self, play_per_game:int) -> int:
         game_history = self.X[self.X[:, 3] <= play_per_game]
         pitcher_id = game_history[len(game_history) - 1, 6]
