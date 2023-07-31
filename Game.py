@@ -1,11 +1,57 @@
 import numpy as np
 from numpy import genfromtxt
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import mpl_toolkits.mplot3d.art3d as art3d
+from matplotlib.axes import Axes
 from Ball import BallPosition
 from Player import PlayerPosition
 from Statcast import Statcast
 from Glossary import teams
 
-class GameData():
+def field2d(ax:Axes):
+    ax.add_patch(patches.Rectangle((-400,-26), 800, 426, facecolor="#247309",  alpha=0.50))
+    ax.add_patch(patches.Wedge((0,-26), 400, 45, 135, ec="none",edgecolor='orange',facecolor="green", linewidth=2, ))
+    ax.add_patch(patches.Wedge((0,0), 208, 45, 135, ec="none",edgecolor='orange',facecolor='white', linewidth=2, ))
+    ax.add_patch(patches.Wedge((0,0), 204, 45, 135, ec="none",edgecolor='orange',facecolor='#66431d', linewidth=2, ))
+    ax.add_patch(patches.Rectangle((0,0), 128, 128, angle=45, facecolor="white",ec="none"))
+    ax.add_patch(patches.Rectangle((0,0), 124, 124, angle=45, facecolor="green",ec="none"))
+    ax.add_patch(patches.Circle((0,0), 22.4, ec="none",facecolor='white',edgecolor='white',linewidth=10))
+    ax.add_patch(patches.Circle((0,0), 20, ec="none",facecolor='#66431d',edgecolor='white',linewidth=10))
+    ax.add_patch(patches.Wedge((0,0), 22.4, 45, 135, ec="none",facecolor="#66431d" ))
+    ax.add_patch(patches.Rectangle((0,0), 400, 4, angle=45, facecolor="white",ec="none"))
+    ax.add_patch(patches.Rectangle((0,0), 4, 400, angle=45, facecolor="white",ec="none"))
+    ax.add_patch(patches.Circle((0,60), 9, ec="none",facecolor='white',edgecolor='white',linewidth=10))
+
+def field3d(ax:Axes):
+    # ground 
+    rect1 = patches.Rectangle((-400,-26), 800, 426, facecolor="#247309",  alpha=0.1)
+    ax.add_patch(rect1)
+    art3d.pathpatch_2d_to_3d(rect1, z=0, zdir="z",)
+
+    # outfield
+    wedge1 = patches.Wedge((0,-26), 400, 45, 135,alpha=0.1,facecolor="green", linewidth=2, )
+    ax.add_patch(wedge1)
+    art3d.pathpatch_2d_to_3d(wedge1, z=0, zdir="z")
+
+    # infield
+    wedge2 = patches.Wedge((0,0), 208, 45, 135, alpha=0.2,facecolor='#66431d', linewidth=2, )
+    ax.add_patch(wedge2)
+    art3d.pathpatch_2d_to_3d(wedge2, z=0, zdir="z")
+
+    rect3 = patches.Rectangle((0,0), 124, 124, angle=45, alpha=0.2, facecolor="green")
+    ax.add_patch(rect3)
+    art3d.pathpatch_2d_to_3d(rect3, z=0, zdir="z")
+
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+    ax.set_xlim3d(-400, 400)
+    ax.set_ylim3d(-26, 400)
+    ax.set_zlim3d(0, 140)
+
+
+class GameData:
 
     def __init__(self, year:int=1900, day:int=1, away_team:str='TeamKJ', home_team:str='TeamB') -> None:
         self.year = year
@@ -115,6 +161,22 @@ class GameData():
     def get_hits(self):
         return self.game_events.X[self.game_events.X[:, 5] == 4]
 
+    def plot_play_2d(self, play_id:int):
+        fig = plt.figure(figsize=(8,8))
+        ax = fig.add_subplot()
+        field2d(ax)
+        self.ball_pos.__plot2d__(play_id, ax)
+        self.player_pos.__plot2d__(play_id, ax)
+        plt.show()
+
+    def plot_play_3d(self, play_id:int):
+        fig = plt.figure(figsize=(8,8))
+        ax = fig.add_subplot(projection='3d')
+        field3d(ax)
+        self.ball_pos.__plot3d__(play_id, ax)
+        self.player_pos.__plot3d__(play_id, ax)
+        plt.show()
+
 class GameEvents:
 
     def __init__(self, table_suffix:str) -> None:
@@ -155,14 +217,13 @@ class GameInfo:
         self.X = self.X.astype(np.dtype({'names': names, 'formats': formats}))
         self.X = self.X.view((int, len(self.X.dtype.names)))
 
-    
     def at_bats(self, play_per_game:int) -> int:
         game_history = self.X[self.X[:, 3] <= play_per_game]
         batters = game_history[:, 15]
         return np.sum(batters[1:] != batters[:-1]) + 1 # number of times batter changes + 1 for initial batter
     
     # TODO: finish pitch count
-    def get_pitch_count(self, play_per_game:int) -> int:
+    def pitch_count(self, play_per_game:int) -> int:
         game_history = self.X[self.X[:, 3] <= play_per_game]
         pitcher_id = game_history[len(game_history) - 1, 6]
         pitcher_history = game_history[game_history[:, 6] == pitcher_id]
