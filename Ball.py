@@ -89,6 +89,7 @@ class BallPosition:
                         # else, the ball passed the infield before bounce/acquire,
                         # but we just assumed it bounced/acquired within the infield.
                         # TODO: contradiction in infield_bb?
+        return bb
 
     # TODO: outfield_bb
     def outfield_bb(self, hits:np.ndarray):
