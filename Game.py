@@ -50,7 +50,6 @@ def field3d(ax:Axes):
     ax.set_ylim3d(-26, 400)
     ax.set_zlim3d(0, 140)
 
-
 class GameData:
 
     def __init__(self, year:int=1900, day:int=1, away_team:str='TeamKJ', home_team:str='TeamB') -> None:
@@ -158,8 +157,14 @@ class GameData:
             i += 1
         return outs
     
-    def get_hits(self):
-        return self.game_events.X[self.game_events.X[:, 5] == 4]
+    def get_hit_events(self):
+        hit_rows = self.game_events.X[self.game_events.X[:, 5] == 4]
+        hit_events = []
+        for play_id in hit_rows[:, 0]:
+            play_rows = self.game_events.X[self.game_events.X[:, 0] == play_id]
+            hit_events.extend(play_rows)
+        return np.array(hit_events)
+    
 
     def plot_play_2d(self, play_id:int):
         fig = plt.figure(figsize=(8,8))
@@ -175,7 +180,11 @@ class GameData:
         field3d(ax)
         self.ball_pos.__plot3d__(play_id, ax)
         self.player_pos.__plot3d__(play_id, ax)
+        plt.title(play_id)
         plt.show()
+
+    def infield_batted_balls(self):
+        return self.ball_pos.infield_batted_balls(self.get_hit_events())
 
 class GameEvents:
 
